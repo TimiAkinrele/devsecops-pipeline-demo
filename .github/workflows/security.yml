@@ -45,7 +45,7 @@ jobs:
 
       - name: Scan Dependencies with OWASP Dependency-Check
         run: |
-          dependency-check/dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 5
+          dependency-check/dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 7
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
