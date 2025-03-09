@@ -32,11 +32,14 @@ jobs:
         run: |
           semgrep --config auto --error .
 
+      - name: Install OWASP Dependency-Check
+        run: |
+          curl -sSL -o dependency-check-12.1.0-release.zip https://github.com/dependency-check/dependency-check/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
+          unzip dependency-check-12.1.0-release.zip -d dependency-check
+          chmod +x dependency-check/bin/dependency-check.sh
+
       - name: Scan Dependencies with OWASP Dependency-Check
         run: |
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.7.1/dependency-check-7.7.1-release.zip
-          unzip dependency-check-7.7.1-release.zip -d dependency-check
-          chmod +x dependency-check/bin/dependency-check.sh
           dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 5
 
       - name: Set up Docker Buildx
