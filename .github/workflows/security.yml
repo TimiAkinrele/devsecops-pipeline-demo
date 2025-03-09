@@ -34,9 +34,14 @@ jobs:
 
       - name: Install OWASP Dependency-Check
         run: |
-          curl -sSL -o dependency-check-12.1.0-release.zip https://github.com/dependency-check/dependency-check/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
-          unzip dependency-check-12.1.0-release.zip -d dependency-check
-          chmod +x dependency-check/bin/dependency-check.sh
+          curl -sSL -o dependency-check-7.7.1-release.zip https://github.com/jeremylong/DependencyCheck/releases/download/v7.7.1/dependency-check-7.7.1-release.zip
+          if file dependency-check-7.7.1-release.zip | grep -q 'Zip archive data'; then
+            unzip dependency-check-7.7.1-release.zip -d dependency-check
+            chmod +x dependency-check/bin/dependency-check.sh
+          else
+            echo "Downloaded file is not a valid ZIP archive."
+            exit 1
+          fi
 
       - name: Scan Dependencies with OWASP Dependency-Check
         run: |
@@ -60,3 +65,4 @@ jobs:
       - name: Scan Docker image with Trivy
         run: |
           trivy image --exit-code 1 --severity HIGH,CRITICAL devsecops-demo
+~
