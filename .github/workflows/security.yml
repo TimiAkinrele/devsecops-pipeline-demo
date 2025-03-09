@@ -24,26 +24,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Download Semgrep Install Script
-        run: |
-          curl -sSL -o install_semgrep.sh https://semgrep.dev/install.sh
-
-      - name: Check HTTP Status
-        run: |
-          curl -I https://semgrep.dev/install.sh
-
-      - name: Check Script Contents
-        run: |
-          head -n 10 install_semgrep.sh
-
       - name: Install Semgrep
         run: |
-          if grep -q "#!/bin/bash" install_semgrep.sh; then
-            bash install_semgrep.sh
-          else
-            echo "Error: install_semgrep.sh is not a valid script."
-            exit 1
-          fi
+          pip install semgrep
 
       - name: Run Semgrep for SAST
         run: |
