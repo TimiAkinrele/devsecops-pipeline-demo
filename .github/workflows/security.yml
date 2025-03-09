@@ -1,0 +1,47 @@
+name: DevSecOps Security Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+
+    - name: Install Dependencies
+      run: |
+        pip install flask
+
+    - name: Run Semgrep for SAST
+      run: |
+        curl -sSL https://semgrep.dev/install.sh | sh
+        semgrep --config auto --error
+
+    - name: Scan Dependencies with OWASP Dependency-Check
+      run: |
+        # Download Dependency-Check (latest version) for Linux
+        wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.7.1/dependency-check-7.7.1-release.zip
+        unzip dependency-check-7.7.1-release.zip -d dependency-check
+        chmod +x dependency-check/bin/dependency-check.sh
+        # Run Dependency-Check against the current directory
+        dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 5
+
+    - name: Build Docker image for Trivy scan
+      run: |
+        sudo docker build -t devsecops-demo .
+
+    - name: Scan Docker image with Trivy
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        trivy image --exit-code 1 --severity HIGH,CRITICAL devsecops-demo
