@@ -55,7 +55,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          tags: devsecops-demo
+          tags: devsecops-demo:latest
+          load: true
 
       - name: Install Trivy
         run: |
@@ -64,4 +65,4 @@ jobs:
 
       - name: Scan Docker image with Trivy
         run: |
-          trivy image --exit-code 1 --severity HIGH,CRITICAL devsecops-demo
+          trivy image --exit-code 1 --severity HIGH,CRITICAL devsecops-demo:latest
