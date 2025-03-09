@@ -23,10 +23,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-     
+
       - name: Download Semgrep Install Script
         run: |
-          curl -sSL https://semgrep.dev/install.sh -o install_semgrep.sh
+          curl -sSL -o install_semgrep.sh https://semgrep.dev/install.sh
+
+      - name: Check HTTP Status
+        run: |
+          curl -I https://semgrep.dev/install.sh
 
       - name: Check Script Contents
         run: |
@@ -34,12 +38,12 @@ jobs:
 
       - name: Install Semgrep
         run: |
-          bash install_semgrep.sh          
+          bash install_semgrep.sh
 
       - name: Run Semgrep for SAST
         run: |
-          ./semgrep --config auto --error .
-     
+          semgrep --config auto --error .
+
       - name: Scan Dependencies with OWASP Dependency-Check
         run: |
           wget https://github.com/jeremylong/DependencyCheck/releases/download/v7.7.1/dependency-check-7.7.1-release.zip
