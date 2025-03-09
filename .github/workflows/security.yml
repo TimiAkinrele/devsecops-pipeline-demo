@@ -24,10 +24,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
      
-      - name: Install Semgrep
+      - name: Download Semgrep Install Script
         run: |
           curl -sSL https://semgrep.dev/install.sh -o install_semgrep.sh
-          sh install_semgrep.sh
+
+      - name: Check Script Contents
+        run: |
+          cat install_semgrep.sh
+
+      - name: Install Semgrep
+        run: |
+          bash install_semgrep.sh          
 
       - name: Run Semgrep for SAST
         run: |
