@@ -34,12 +34,10 @@ jobs:
 
       - name: Install OWASP Dependency-Check
         run: |
-          # Download Dependency-Check version 12.1.0
           curl -sSL -o dependency-check-12.1.0-release.zip https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
-          # Verify that the downloaded file is a valid ZIP archive
           if file dependency-check-12.1.0-release.zip | grep -q 'Zip archive data'; then
             unzip dependency-check-12.1.0-release.zip -d dependency-check
-            chmod +x dependency-check/bin/dependency-check.sh
+            chmod +x dependency-check/dependency-check/bin/dependency-check.sh
           else
             echo "Downloaded file is not a valid ZIP archive."
             exit 1
@@ -47,7 +45,7 @@ jobs:
 
       - name: Scan Dependencies with OWASP Dependency-Check
         run: |
-          dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 5
+          dependency-check/dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
