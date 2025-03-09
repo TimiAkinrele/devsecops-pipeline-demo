@@ -34,11 +34,16 @@ jobs:
 
       - name: Check Script Contents
         run: |
-          cat install_semgrep.sh
+          head -n 10 install_semgrep.sh
 
       - name: Install Semgrep
         run: |
-          bash install_semgrep.sh
+          if grep -q "#!/bin/bash" install_semgrep.sh; then
+            bash install_semgrep.sh
+          else
+            echo "Error: install_semgrep.sh is not a valid script."
+            exit 1
+          fi
 
       - name: Run Semgrep for SAST
         run: |
