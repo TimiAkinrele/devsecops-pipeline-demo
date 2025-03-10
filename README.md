@@ -12,12 +12,8 @@ This repository demonstrates a complete DevSecOps pipeline for a Flask web appli
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Installation and Setup](#installation-and-setup)
-- [Running the Application Locally](#running-the-application-locally)
-- [Dockerisation](#dockerisation)
 - [CI/CD Pipeline](#cicd-pipeline)
-- [Including Images in README](#including-images-in-readme)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## Project Overview
 
