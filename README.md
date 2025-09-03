@@ -43,26 +43,26 @@ For GitHub Actions, your repository will use the default Ubuntu runner, so no ex
 ## Installation and Setup
 
 1. **Clone the Repository:**
-
-   ```bash
+   ```
    git clone https://github.com/<your-username>/devsecops-pipeline-demo.git
    cd devsecops-pipeline-demo
-
+   ```
 2. **Install Python Dependencoes**
 
 Create a Virtual Environment (recommended):
-
+   ```
    python3 -m venv venv
    source venv/bin/activate
    pip install --upgrade pip
    pip install -r requirements.txt
+   ````
 
 3. Docker Setup
    
    Ensure Docker is installed and running on your system correctly. Test with:
-
-   docker --version
-
+      ```
+      docker --version
+      ```
 4. Running the Application Locally
 
 With the virtual environment activated, start the app:
