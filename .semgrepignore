@@ -1,0 +1,12 @@
+**/.git/*
+**/node_modules/*
+**/dist/*
+**/build/*
+**/.venv/*
+**/venv/*
+**/__pycache__/*
+**/*.min.js
+**/*.min.css
+**/coverage/*
+**/docs/*
+**/*.md

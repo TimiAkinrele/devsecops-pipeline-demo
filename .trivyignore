@@ -1,0 +1,3 @@
+# Ignore CVEs here if accepted risk
+# Example:
+# CVE-2023-12345

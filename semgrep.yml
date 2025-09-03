@@ -1,0 +1,12 @@
+rules:
+  - id: no-hardcoded-secrets
+    languages: [python, generic]
+    message: "Possible hardcoded secret or credential."
+    severity: ERROR
+    patterns:
+      - pattern-regex: '(?i)(aws_|secret|api[_-]?key|token|password)\s*[:=]\s*["\'][A-Za-z0-9/\+=._-]{12,}["\']'
+    paths:
+      exclude:
+        - tests/
+        - docs/
+        - "*.md"

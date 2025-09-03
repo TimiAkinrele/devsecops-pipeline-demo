@@ -7,4 +7,5 @@ def hello():
     return "Hello from the DevSecOps demo app!"
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000)
+    # Bind to all interfaces so Docker container works
+    app.run(host='0.0.0.0', port=5000)

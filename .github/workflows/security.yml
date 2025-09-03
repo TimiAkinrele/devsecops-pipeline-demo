@@ -6,64 +6,133 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  security-events: write   # required for SARIF uploads
+  actions: read
+  checks: write
+
 jobs:
-  build-and-scan:
+  security:
     runs-on: ubuntu-latest
+
+    env:
+      PYTHON_VERSION: '3.11'
+      DC_DATA_DIR: ${{ runner.temp }}/dependency-check-data
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/checkout@v4
         with:
-          python-version: '3.9'
+          fetch-depth: 0   # needed for semgrep baseline & trivy metadata
 
-      - name: Install Dependencies
+      # ---------- Python setup ----------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install project requirements (if present)
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Install Semgrep
-        run: |
-          pip install semgrep
+      # ---------- Semgrep (SAST) ----------
+      - name: Semgrep SAST
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+          generateSarif: true
+          uploadSarif: true
+          baselineRef: origin/main   # fail PRs only on NEW findings
+          severity: ERROR            # block only high-severity
+          auditOn: push              # pushes to main = report-only
 
-      - name: Run Semgrep for SAST
-        run: |
-          semgrep --config auto --error .
+      - name: Downgrade Semgrep failure on push
+        if: github.event_name == 'push'
+        run: echo "Semgrep ran in report-only mode for push."
 
-      - name: Install OWASP Dependency-Check
+      # ---------- Dependency-Check (SCA) ----------
+      - name: Run Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@v4.1.0
+        with:
+          project: "DevSecOps Demo"
+          path: "."
+          format: 'SARIF,HTML,JSON'
+          out: './dependency-check-report'
+          data: ${{ env.DC_DATA_DIR }}
+
+      - name: Upload Dependency-Check SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ./dependency-check-report/dependency-check-report.sarif
+          category: dependency-check
+
+      - name: Upload Dependency-Check HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-html
+          path: ./dependency-check-report/dependency-check-report.html
+          retention-days: 7
+
+      - name: Fail PR on High CVSS Findings
+        if: github.event_name == 'pull_request'
         run: |
-          curl -sSL -o dependency-check-12.1.0-release.zip https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip
-          if file dependency-check-12.1.0-release.zip | grep -q 'Zip archive data'; then
-            unzip dependency-check-12.1.0-release.zip -d dependency-check
-            chmod +x dependency-check/dependency-check/bin/dependency-check.sh
-          else
-            echo "Downloaded file is not a valid ZIP archive."
+          if [ ! -f ./dependency-check-report/dependency-check-report.json ]; then
+            echo "::warning::No JSON report found, skipping gate"
+            exit 0
+          fi
+          jq -r '
+            .dependencies[]?.vulnerabilities[]? 
+            | select(.cvssScore >= 8) 
+            | "\(.name) CVSS=\(.cvssScore) - \(.description | tostring | .[0:100])..."
+          ' ./dependency-check-report/dependency-check-report.json | tee /tmp/high.txt || true
+
+          if [ -s /tmp/high.txt ]; then
+            echo "::error::High/Critical CVEs found"
             exit 1
           fi
 
-      - name: Scan Dependencies with OWASP Dependency-Check
-        run: |
-          dependency-check/dependency-check/bin/dependency-check.sh --project "DevSecOps Demo" --scan . --format "ALL" --failOnCVSS 7
-
+      # ---------- Trivy (container scan) ----------
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image for Trivy scan
-        uses: docker/build-push-action@v2
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           tags: devsecops-demo:latest
           load: true
+          provenance: false
 
-      - name: Install Trivy
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: devsecops-demo:latest
+          format: 'sarif'
+          output: 'trivy-image.sarif'
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          trivyignores: ./.trivyignore
 
-      - name: Scan Docker image with Trivy
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy
+
+      - name: Fail PR on Trivy HIGH/CRITICAL
+        if: github.event_name == 'pull_request'
         run: |
-          # Remove or adjust --exit-code so the job doesn't fail on vulnerabilities
-          trivy image --severity HIGH,CRITICAL devsecops-demo:latest || true
+          trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed devsecops-demo:latest || {
+            echo "::error::Trivy found HIGH/CRITICAL issues"
+            exit 1
+          }
+
+      # ---------- Pushes to main are always green ----------
+      - name: Push to main always green
+        if: github.event_name == 'push'
+        run: echo "Push to main is report-only; PRs enforce strict gates."

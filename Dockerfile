@@ -1,24 +1,24 @@
-# Use the official Python image from Docker Hub
+# Use the official slim Python image
 FROM python:3.9-slim
 
-# Create a non-root user with a home directory
+# Create a non-root user
 RUN useradd -m appuser
 
-# Set the working directory
+# Set workdir
 WORKDIR /app
 
-# Copy requirements and install them
+# Install dependencies first (layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code and adjust ownership
+# Copy app code with correct ownership
 COPY --chown=appuser:appuser . .
 
-# Switch to the non-root user
+# Switch to non-root
 USER appuser
 
-# Expose the application port
+# Expose port
 EXPOSE 5000
 
-# Command to run the application
+# Run Flask app
 CMD ["python", "app/app.py"]
