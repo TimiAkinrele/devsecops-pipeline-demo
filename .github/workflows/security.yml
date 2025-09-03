@@ -18,7 +18,7 @@ jobs:
 
     env:
       PYTHON_VERSION: '3.11'
-      DC_DATA_DIR: ${{ runner.temp }}/dependency-check-data
+      DC_DATA_DIR: ./dependency-check-data
 
     steps:
       - name: Checkout repository
